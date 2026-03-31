@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Intel - Root Labs</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #1B4332;
+    --orange: #E8722A;
+    --cream: #F2EDE4;
+    --cream-dark: #E8E0D4;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+  }
+  body { background: var(--cream); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  header { background: var(--green); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--cream); letter-spacing: 0.05em; text-transform: uppercase; }
+  .logo span { color: var(--orange); }
+  .pill { background: rgba(255,255,255,0.1); color: var(--cream); font-size: 0.75rem; padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  main { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--green); margin-bottom: 6px; }
+  .page-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 40px; }
+  .watching-section { background: var(--green); border-radius: 12px; padding: 20px 24px; margin-bottom: 40px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .watching-label { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(242,237,228,0.6); white-space: nowrap; }
+  .creator-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .creator-chip { background: rgba(255,255,255,0.12); color: var(--cream); font-size: 0.85rem; padding: 4px 14px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.15); }
+  .section-label { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 16px; }
+  .transcript-list { display: flex; flex-direction: column; gap: 10px; }
+  .transcript-card { background: white; border-radius: 10px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--cream-dark); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; gap: 16px; }
+  .transcript-card:hover { border-color: var(--orange); box-shadow: 0 4px 20px rgba(232,114,42,0.12); transform: translateY(-1px); }
+  .transcript-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--green); margin-bottom: 4px; }
+  .transcript-meta { font-size: 0.78rem; color: var(--muted); }
+  .actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-view { color: var(--muted); text-decoration: none; font-size: 0.82rem; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--cream-dark); transition: background 0.15s; }
+  .btn-view:hover { background: var(--cream-dark); }
+  .btn-analyze { background: var(--orange); color: white; text-decoration: none; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.82rem; padding: 6px 14px; border-radius: 6px; transition: opacity 0.15s; }
+  .btn-analyze:hover { opacity: 0.85; }
+  .btn-analyze.done { background: var(--green); }
+  .empty { text-align: center; padding: 80px 20px; color: var(--muted); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.4; }
+  .empty-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--green); margin-bottom: 8px; opacity: 0.6; }
+  .empty-sub { font-size: 0.88rem; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Root Labs <span>/ Live Intel</span></div>
+  <div class="pill"><div class="dot"></div> Monitoring active</div>
+</header>
+<main>
+  <h1 class="page-title">Creator Transcripts</h1>
+  <p class="page-sub">Auto-recorded and transcribed TikTok lives from tracked creators.</p>
+
+  {% if creators %}
+  <div class="watching-section">
+    <div class="watching-label">Watching</div>
+    <div class="creator-chips">
+      {% for c in creators %}<div class="creator-chip">@{{ c }}</div>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section-label">{{ transcripts|length }} transcript{% if transcripts|length != 1 %}s{% endif %}</div>
+
+  {% if transcripts %}
+  <div class="transcript-list">
+    {% for t in transcripts %}
+    <div class="transcript-card">
+      <div>
+        <div class="transcript-name">{{ t.name }}</div>
+        <div class="transcript-meta">{{ t.modified }} &nbsp;·&nbsp; {{ t.size_kb }} KB</div>
+      </div>
+      <div class="actions">
+        <a class="btn-view" href="/transcript/{{ t.name }}">View raw</a>
+        <a class="btn-analyze {% if t.has_intel %}done{% endif %}" href="/analyze/{{ t.name }}">
+          {% if t.has_intel %}View Intel{% else %}Analyze{% endif %}
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">🎙</div>
+    <div class="empty-title">No transcripts yet</div>
+    <div class="empty-sub">Waiting for a tracked creator to go live.<br>Transcripts will appear here automatically.</div>
+  </div>
+  {% endif %}
+</main>
+</body>
+</html>

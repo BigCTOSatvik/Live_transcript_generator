@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intel - {{ name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #1B4332;
+    --orange: #E8722A;
+    --orange-light: #FDF0E8;
+    --cream: #F2EDE4;
+    --cream-dark: #E8E0D4;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+  }
+  body { background: var(--cream); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  header { background: var(--green); padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
+  .back { color: rgba(242,237,228,0.6); text-decoration: none; font-size: 0.85rem; transition: color 0.15s; }
+  .back:hover { color: var(--cream); }
+  .divider { color: rgba(242,237,228,0.2); }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--cream); letter-spacing: 0.05em; text-transform: uppercase; }
+  .logo span { color: var(--orange); }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; gap: 16px; flex-wrap: wrap; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--green); margin-bottom: 4px; }
+  .page-sub { color: var(--muted); font-size: 0.85rem; }
+  .refresh-btn { background: transparent; border: 1.5px solid var(--green); color: var(--green); border-radius: 8px; padding: 8px 16px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.8rem; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+  .refresh-btn:hover { background: var(--green); color: var(--cream); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: white; border-radius: 12px; border: 1px solid var(--cream-dark); padding: 24px; }
+  .card.full { grid-column: 1 / -1; }
+  .card.dark { background: var(--green); border-color: var(--green); }
+  .card.warm { background: var(--orange-light); border-color: #f0d5c0; }
+  .card-label { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 12px; }
+  .card.dark .card-label { color: rgba(242,237,228,0.5); }
+  .card.warm .card-label { color: var(--orange); }
+  .hook-line { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--green); line-height: 1.4; margin-bottom: 10px; }
+  .card.dark .hook-line { color: var(--cream); }
+  .hook-type { display: inline-block; background: var(--orange); color: white; font-size: 0.72rem; font-weight: 600; font-family: 'Syne', sans-serif; padding: 3px 10px; border-radius: 99px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .why { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+  .card.dark .why { color: rgba(242,237,228,0.7); }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { background: var(--cream); border: 1px solid var(--cream-dark); color: var(--text); font-size: 0.8rem; padding: 4px 12px; border-radius: 99px; }
+  .card.dark .tag { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); color: var(--cream); }
+  .list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .list li { font-size: 0.88rem; line-height: 1.5; padding-left: 16px; position: relative; }
+  .list li::before { content: "—"; position: absolute; left: 0; color: var(--orange); }
+  .card.dark .list li { color: rgba(242,237,228,0.85); }
+  .card.dark .list li::before { color: var(--orange); }
+  .proof-item { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--cream-dark); }
+  .proof-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .proof-type { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--orange); margin-bottom: 4px; }
+  .proof-detail { font-size: 0.85rem; line-height: 1.5; color: var(--text); }
+  .objection-item { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--cream-dark); }
+  .objection-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .objection-q { font-size: 0.82rem; font-weight: 500; color: var(--muted); margin-bottom: 4px; }
+  .objection-a { font-size: 0.88rem; line-height: 1.5; }
+  .swipe-line { background: var(--cream); border-left: 3px solid var(--orange); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 0.88rem; line-height: 1.5; font-style: italic; margin-bottom: 8px; cursor: pointer; transition: background 0.15s; }
+  .swipe-line:last-child { margin-bottom: 0; }
+  .swipe-line:hover { background: var(--cream-dark); }
+  .app-item { background: white; border-radius: 8px; padding: 12px 16px; font-size: 0.88rem; line-height: 1.5; margin-bottom: 8px; border: 1px solid var(--cream-dark); }
+  .app-item:last-child { margin-bottom: 0; }
+  .cta-language { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600; color: var(--cream); margin-bottom: 8px; line-height: 1.4; }
+  .cta-timing { font-size: 0.82rem; color: rgba(242,237,228,0.6); }
+  .loop-text { font-size: 0.9rem; line-height: 1.6; color: var(--text); }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .card.full { grid-column: 1; } }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← Back</a>
+  <span class="divider">/</span>
+  <div class="logo">Root Labs <span>/ Live Intel</span></div>
+</header>
+
+<main>
+  <div class="page-header">
+    <div>
+      <div class="page-title">Intelligence Report</div>
+      <div class="page-sub">{{ name }}</div>
+    </div>
+    <a class="refresh-btn" href="/analyze/{{ name }}/refresh">↻ Re-analyze</a>
+  </div>
+
+  <div class="grid">
+
+    <!-- Hook -->
+    <div class="card dark full">
+      <div class="card-label">Hook</div>
+      <div class="hook-line">"{{ intel.hook.opening_line }}"</div>
+      <span class="hook-type">{{ intel.hook.hook_type }}</span>
+      <div class="why">{{ intel.hook.why_it_works }}</div>
+    </div>
+
+    <!-- Pain Points -->
+    <div class="card">
+      <div class="card-label">Pain Points Used</div>
+      <ul class="list">
+        {% for p in intel.pain_points %}
+        <li>{{ p }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Mechanism -->
+    <div class="card">
+      <div class="card-label">Mechanism Explained</div>
+      <div style="font-size:0.88rem; line-height:1.6; margin-bottom:14px;">{{ intel.mechanism.explanation }}</div>
+      <div class="tag-list">
+        {% for t in intel.mechanism.key_terms_used %}
+        <span class="tag">{{ t }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Proof -->
+    <div class="card">
+      <div class="card-label">Proof Structure</div>
+      {% for p in intel.proof %}
+      <div class="proof-item">
+        <div class="proof-type">{{ p.type }}</div>
+        <div class="proof-detail">{{ p.detail }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- CTA -->
+    <div class="card dark">
+      <div class="card-label">CTA</div>
+      <div class="cta-language">"{{ intel.cta.language }}"</div>
+      <div class="cta-timing">{{ intel.cta.timing }}</div>
+    </div>
+
+    <!-- Loop Structure -->
+    <div class="card full">
+      <div class="card-label">Live Loop Structure</div>
+      <div class="loop-text">{{ intel.loop_structure }}</div>
+    </div>
+
+    <!-- Objections -->
+    <div class="card full">
+      <div class="card-label">Objections Handled</div>
+      {% for o in intel.objections_handled %}
+      <div class="objection-item">
+        <div class="objection-q">Q: {{ o.objection }}</div>
+        <div class="objection-a">{{ o.response }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Swipe Lines -->
+    <div class="card">
+      <div class="card-label">Swipe Lines - click to copy</div>
+      {% for line in intel.swipe_lines %}
+      <div class="swipe-line" onclick="copyLine(this)">{{ line }}</div>
+      {% endfor %}
+    </div>
+
+    <!-- Root Labs Applications -->
+    <div class="card warm">
+      <div class="card-label">Root Labs Applications</div>
+      {% for app in intel.root_labs_applications %}
+      <div class="app-item">{{ app }}</div>
+      {% endfor %}
+    </div>
+
+  </div>
+</main>
+
+<script>
+  function copyLine(el) {
+    navigator.clipboard.writeText(el.innerText).then(() => {
+      const orig = el.style.background;
+      el.style.background = '#d4edda';
+      setTimeout(() => { el.style.background = orig; }, 800);
+    });
+  }
+</script>
+
+</body>
+</html>

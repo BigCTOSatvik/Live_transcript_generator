@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ name }} - Live Intel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1B4332;
+    --green-mid: #2D6A4F;
+    --orange: #E8722A;
+    --cream: #F2EDE4;
+    --cream-dark: #E8E0D4;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+  }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--green);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .back {
+    color: rgba(242,237,228,0.6);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+
+  .back:hover { color: var(--cream); }
+
+  .divider {
+    color: rgba(242,237,228,0.2);
+    font-size: 0.9rem;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--cream);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .logo span { color: var(--orange); }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  .transcript-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--green);
+    margin-bottom: 6px;
+    word-break: break-word;
+  }
+
+  .transcript-sub {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+  }
+
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-bottom: 32px;
+    transition: opacity 0.15s;
+  }
+
+  .copy-btn:hover { opacity: 0.88; }
+
+  .transcript-box {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--cream-dark);
+    padding: 32px;
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← Back</a>
+  <span class="divider">/</span>
+  <div class="logo">Root Labs <span>/ Live Intel</span></div>
+</header>
+
+<main>
+  <h1 class="transcript-title">{{ name }}</h1>
+  <p class="transcript-sub">Raw transcript - ready for intelligence analysis</p>
+
+  <button class="copy-btn" onclick="copyText()">⎘ Copy full transcript</button>
+
+  <div class="transcript-box" id="transcript-content">{{ content }}</div>
+</main>
+
+<script>
+  function copyText() {
+    const text = document.getElementById('transcript-content').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✓ Copied';
+      setTimeout(() => { btn.innerHTML = '⎘ Copy full transcript'; }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -11,12 +11,13 @@ ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH"
 
 WORKDIR /recorder
 RUN uv venv && uv sync
+RUN uv pip install ffmpeg-python requests telethon
 
 RUN pip install --break-system-packages openai flask google-api-python-client google-auth
 
 WORKDIR /app
 COPY main.py .
 
-RUN mkdir -p /recordings /transcripts /intel
+RUN mkdir -p /recordings /transcripts /intel /comments
 
 CMD ["python", "main.py"]

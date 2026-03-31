@@ -1,6 +1,23 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+FROM python:3.11-slim
 
-[deploy]
-restartPolicyType = "always"
+RUN apt-get update && apt-get install -y \
+    ffmpeg git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/Michele0303/tiktok-live-recorder /recorder
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH"
+
+WORKDIR /recorder
+RUN uv venv && uv sync
+
+RUN pip install openai flask
+
+WORKDIR /app
+COPY main.py .
+COPY templates/ templates/
+
+RUN mkdir -p /recordings /transcripts /intel
+
+CMD ["python", "main.py"]

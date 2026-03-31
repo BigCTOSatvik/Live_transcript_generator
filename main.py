@@ -606,17 +606,46 @@ def upload_to_drive(mp4_path):
     if not folder_id or not creds_json:
         return
     try:
+        import requests as req
         from google.oauth2 import service_account
-        from googleapiclient.discovery import build
-        from googleapiclient.http import MediaFileUpload
+        from google.auth.transport.requests import Request as GRequest
         creds = service_account.Credentials.from_service_account_info(
-            json.loads(creds_json), scopes=["https://www.googleapis.com/auth/drive"])
-        service = build("drive", "v3", credentials=creds)
-        media = MediaFileUpload(str(mp4_path), mimetype="video/mp4", resumable=True)
-        service.files().create(
-            body={"name": mp4_path.name, "parents": [folder_id]},
-            media_body=media, fields="id").execute()
-        log.info(f"Uploaded {mp4_path.name} to Drive")
+            json.loads(creds_json),
+            scopes=["https://www.googleapis.com/auth/drive"])
+        creds.refresh(GRequest())
+        token = creds.token
+        # Step 1 - initiate resumable upload
+        meta = json.dumps({"name": mp4_path.name, "parents": [folder_id]})
+        init_resp = req.post(
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json; charset=UTF-8",
+                "X-Upload-Content-Type": "video/mp4",
+                "X-Upload-Content-Length": str(mp4_path.stat().st_size),
+            },
+            data=meta
+        )
+        upload_url = init_resp.headers.get("Location")
+        if not upload_url:
+            log.error(f"Drive init failed: {init_resp.text}")
+            return
+        # Step 2 - upload file
+        with open(mp4_path, "rb") as f:
+            data = f.read()
+        up_resp = req.put(
+            upload_url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "video/mp4",
+                "Content-Length": str(len(data)),
+            },
+            data=data
+        )
+        if up_resp.status_code in (200, 201):
+            log.info(f"Uploaded {mp4_path.name} to Drive")
+        else:
+            log.error(f"Drive upload failed: {up_resp.text}")
     except Exception as e:
         log.error(f"Drive upload failed: {e}")
 

@@ -13,7 +13,7 @@ WORKDIR /recorder
 RUN uv venv && uv sync
 RUN uv pip install ffmpeg-python requests telethon
 
-RUN pip install --break-system-packages openai flask google-api-python-client google-auth
+RUN pip install --break-system-packages openai flask google-api-python-client google-auth requests
 
 WORKDIR /app
 COPY main.py .

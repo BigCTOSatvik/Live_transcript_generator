@@ -516,10 +516,32 @@ def spikes(creator):
     except Exception:
         viewer_entries = []
 
+    # invalidate cached spike data if viewer log is newer (more data collected)
+    if spike_path.exists():
+        try:
+            cached_time = spike_path.stat().st_mtime
+            viewer_time = viewer_log.stat().st_mtime
+            # re-analyze if viewer data is more than 30 min newer than cache
+            if viewer_time - cached_time > 1800:
+                spike_path.unlink()
+        except Exception:
+            pass
+
     if spike_path.exists():
         data = json.loads(spike_path.read_text())
     else:
         chunks = sorted(TRANSCRIPTS_DIR.glob(f"{creator}_*.txt"), key=lambda f: f.stat().st_mtime)
+        if not chunks:
+            body = f"""{header(True)}
+            <main>
+              <h1 style="margin-bottom:6px">Traffic Spike Analysis</h1>
+              <p class="sub">@{creator}</p>
+              <div class="empty"><div class="empty-icon">📈</div>
+                <div class="etitle">No transcript data yet</div>
+                <p>Waiting for a chunk to finish transcribing.</p>
+              </div>
+            </main>"""
+            return page(f"Spikes - {creator}", body)
         transcript = "\n\n".join(f.read_text() for f in chunks)[:60000]
         viewer_data = viewer_log.read_text()
         try:
@@ -579,6 +601,31 @@ def comments(creator):
           </div>
         </main>"""
         return page(f"Comments - {creator}", body)
+
+    # require minimum comments before analysis
+    raw_lines = [l for l in raw_comments.read_text().splitlines() if l.strip()]
+    if len(raw_lines) < 30:
+        body = f"""{header(True)}
+        <main>
+          <h1 style="margin-bottom:6px">Comment Intelligence</h1>
+          <p class="sub">@{creator}</p>
+          <div class="empty"><div class="empty-icon">💬</div>
+            <div class="etitle">Not enough comments yet</div>
+            <p>Collected {len(raw_lines)} comment(s) so far. Need at least 30 for meaningful analysis.<br>Check back after more of the live is captured.</p>
+          </div>
+        </main>"""
+        return page(f"Comments - {creator}", body)
+
+    if comments_path.exists():
+        # invalidate cache if raw comments have grown significantly since last analysis
+        try:
+            cached_time = comments_path.stat().st_mtime
+            raw_time = raw_comments.stat().st_mtime
+            # if raw file is more than 30 min newer than cache, re-analyze
+            if raw_time - cached_time > 1800:
+                comments_path.unlink()
+        except Exception:
+            pass
 
     if comments_path.exists():
         data = json.loads(comments_path.read_text())

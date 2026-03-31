@@ -18,7 +18,7 @@ WORKDIR /recorder
 RUN uv venv && uv sync
 
 # install our pipeline deps on top
-RUN pip install openai
+RUN pip install --break-system-packages openai flask
 
 # copy our pipeline
 WORKDIR /app

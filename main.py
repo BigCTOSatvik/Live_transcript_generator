@@ -1,4 +1,5 @@
 import os, time, subprocess, threading, logging, json
+from io import BytesIO
 from pathlib import Path
 from datetime import datetime
 from openai import OpenAI
@@ -290,27 +291,43 @@ def render_intel(n, i):
 
 # Transcription
 
+
+def upload_to_drive(mp4_path):
+    folder_id = os.environ.get("DRIVE_FOLDER_ID")
+    creds_json = os.environ.get("GOOGLE_CREDENTIALS")
+    if not folder_id or not creds_json:
+        log.warning("Drive not configured - skipping upload")
+        return
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaFileUpload
+        creds_data = json.loads(creds_json)
+        creds = service_account.Credentials.from_service_account_info(
+            creds_data, scopes=["https://www.googleapis.com/auth/drive"]
+        )
+        service = build("drive", "v3", credentials=creds)
+        file_metadata = {"name": mp4_path.name, "parents": [folder_id]}
+        media = MediaFileUpload(str(mp4_path), mimetype="video/mp4", resumable=True)
+        service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+        log.info(f"Uploaded {mp4_path.name} to Drive")
+    except Exception as e:
+        log.error(f"Drive upload failed: {e}")
+
 def transcribe(mp4_path):
+    # name transcript as username_originalfilename.txt
     creator = mp4_path.parent.name
     transcript_name = f"{creator}_{mp4_path.stem}.txt"
     transcript_path = TRANSCRIPTS_DIR / transcript_name
     if transcript_path.exists(): return
     log.info(f"Transcribing {mp4_path.name}...")
-    mp3_path = mp4_path.with_suffix(".mp3")
     try:
-        subprocess.run([
-            "ffmpeg", "-y", "-i", str(mp4_path),
-            "-vn", "-ar", "16000", "-ac", "1", "-b:a", "32k",
-            str(mp3_path)
-        ], capture_output=True)
-        with open(mp3_path, "rb") as f:
+        with open(mp4_path, "rb") as f:
             result = client.audio.transcriptions.create(model="whisper-1", file=f, response_format="text")
         transcript_path.write_text(result)
         log.info(f"Saved -> {transcript_path}")
-        mp3_path.unlink(missing_ok=True)
     except Exception as e:
         log.error(f"Transcription failed: {e}")
-        mp3_path.unlink(missing_ok=True)
 
 def watch_recordings():
     while True:

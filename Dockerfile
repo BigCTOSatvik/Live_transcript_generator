@@ -13,7 +13,8 @@ WORKDIR /recorder
 RUN uv venv && uv sync
 RUN uv pip install ffmpeg-python requests telethon
 
-RUN pip install --break-system-packages openai flask google-api-python-client google-auth requests
+RUN pip install --break-system-packages \
+    openai flask requests TikTokLive
 
 WORKDIR /app
 COPY main.py .

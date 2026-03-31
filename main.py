@@ -291,7 +291,10 @@ def render_intel(n, i):
 # Transcription
 
 def transcribe(mp4_path):
-    transcript_path = TRANSCRIPTS_DIR / (mp4_path.stem + ".txt")
+    # name transcript as username_originalfilename.txt
+    creator = mp4_path.parent.name
+    transcript_name = f"{creator}_{mp4_path.stem}.txt"
+    transcript_path = TRANSCRIPTS_DIR / transcript_name
     if transcript_path.exists(): return
     log.info(f"Transcribing {mp4_path.name}...")
     try:
@@ -304,22 +307,38 @@ def transcribe(mp4_path):
 
 def watch_recordings():
     while True:
-        for mp4 in RECORDINGS_DIR.glob("*.mp4"):
+        for mp4 in RECORDINGS_DIR.rglob("*.mp4"):
             if mp4 in already_processed: continue
             s1 = mp4.stat().st_size
-            time.sleep(10)
+            time.sleep(5)
             s2 = mp4.stat().st_size
             if s1 == s2 and s2 > 0:
                 already_processed.add(mp4)
                 threading.Thread(target=transcribe, args=(mp4,), daemon=True).start()
         time.sleep(POLL_INTERVAL)
 
+CHUNK_SECONDS = int(os.environ.get("CHUNK_SECONDS", "300"))
+
 def start_recorder(user):
-    cmd = ["python", "src/main.py", "-user", user, "-mode", RECORD_MODE, "-output", str(RECORDINGS_DIR), "-automatic_interval", RECORD_INTERVAL]
+    chunk = 0
     while True:
-        try: subprocess.run(cmd, cwd="/recorder")
-        except Exception as e: log.error(f"Recorder error: {e}")
-        time.sleep(60)
+        chunk += 1
+        output_dir = RECORDINGS_DIR / user
+        output_dir.mkdir(parents=True, exist_ok=True)
+        cmd = [
+            "python", "src/main.py",
+            "-user", user,
+            "-mode", "manual",
+            "-output", str(output_dir),
+            "-duration", str(CHUNK_SECONDS),
+        ]
+        log.info(f"@{user} chunk {chunk} starting ({CHUNK_SECONDS}s)...")
+        try:
+            subprocess.run(cmd, cwd="/recorder")
+            log.info(f"@{user} chunk {chunk} done")
+        except Exception as e:
+            log.error(f"Recorder error @{user}: {e}")
+        time.sleep(2)
 
 if __name__ == "__main__":
     if not CREATORS: log.error("No TIKTOK_USERS set."); exit(1)

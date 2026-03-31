@@ -1,4 +1,4 @@
-import os, time, subprocess, threading, logging, json, re
+import os, time, subprocess, threading, logging, json, re, asyncio
 from pathlib import Path
 from datetime import datetime
 from openai import OpenAI
@@ -601,53 +601,8 @@ def comments(creator):
 # ── Drive upload ───────────────────────────────────────────
 
 def upload_to_drive(mp4_path):
-    folder_id  = os.environ.get("DRIVE_FOLDER_ID")
-    creds_json = os.environ.get("GOOGLE_CREDENTIALS")
-    if not folder_id or not creds_json:
-        return
-    try:
-        import requests as req
-        from google.oauth2 import service_account
-        from google.auth.transport.requests import Request as GRequest
-        creds = service_account.Credentials.from_service_account_info(
-            json.loads(creds_json),
-            scopes=["https://www.googleapis.com/auth/drive"])
-        creds.refresh(GRequest())
-        token = creds.token
-        # Step 1 - initiate resumable upload
-        meta = json.dumps({"name": mp4_path.name, "parents": [folder_id]})
-        init_resp = req.post(
-            "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json; charset=UTF-8",
-                "X-Upload-Content-Type": "video/mp4",
-                "X-Upload-Content-Length": str(mp4_path.stat().st_size),
-            },
-            data=meta
-        )
-        upload_url = init_resp.headers.get("Location")
-        if not upload_url:
-            log.error(f"Drive init failed: {init_resp.text}")
-            return
-        # Step 2 - upload file
-        with open(mp4_path, "rb") as f:
-            data = f.read()
-        up_resp = req.put(
-            upload_url,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "video/mp4",
-                "Content-Length": str(len(data)),
-            },
-            data=data
-        )
-        if up_resp.status_code in (200, 201):
-            log.info(f"Uploaded {mp4_path.name} to Drive")
-        else:
-            log.error(f"Drive upload failed: {up_resp.text}")
-    except Exception as e:
-        log.error(f"Drive upload failed: {e}")
+    # Drive upload disabled - enable by setting DRIVE_FOLDER_ID when ready
+    pass
 
 # ── Transcription ──────────────────────────────────────────
 
@@ -704,6 +659,75 @@ def poll_viewer_count(user, room_id):
             log.warning(f"Viewer poll failed: {e}")
         time.sleep(30)
 
+
+# ── Chat + viewer capture ──────────────────────────────────
+
+def start_chat_capture(user):
+    """Runs in a thread - captures comments and viewer counts via TikTokLive WebSocket"""
+    async def _run():
+        try:
+            from TikTokLive import TikTokLiveClient
+            from TikTokLive.events import CommentEvent, ConnectEvent, DisconnectEvent
+        except ImportError:
+            log.error("TikTokLive not installed - skipping chat capture")
+            return
+
+        chat_file    = COMMENTS_DIR / f"{user}_chat.txt"
+        viewers_file = COMMENTS_DIR / f"{user}_viewers.json"
+        viewer_log   = []
+        start_time   = time.time()
+
+        client = TikTokLiveClient(unique_id=f"@{user}")
+
+        @client.on(ConnectEvent)
+        async def on_connect(event):
+            log.info(f"Chat capture connected for @{user}")
+
+        @client.on(CommentEvent)
+        async def on_comment(event):
+            ts  = int(time.time() - start_time)
+            line = f"[{ts}s] {event.user.unique_id}: {event.comment}\n"
+            with open(chat_file, "a", encoding="utf-8") as f:
+                f.write(line)
+
+        @client.on(DisconnectEvent)
+        async def on_disconnect(event):
+            log.info(f"Chat capture disconnected for @{user}")
+
+        # poll viewer count every 30s via room info
+        async def poll_viewers():
+            while True:
+                try:
+                    info = await client.web.fetch_room_id_from_unique_id(f"@{user}")
+                    # viewer count from client room info
+                    if hasattr(client, 'room') and client.room:
+                        count = getattr(client.room, 'user_count', 0)
+                        elapsed = int(time.time() - start_time)
+                        viewer_log.append({"t": elapsed, "viewers": count})
+                        viewers_file.write_text(json.dumps(viewer_log))
+                except Exception:
+                    pass
+                await asyncio.sleep(30)
+
+        asyncio.create_task(poll_viewers())
+
+        try:
+            await client.connect()
+        except Exception as e:
+            log.warning(f"Chat capture error @{user}: {e}")
+
+    # retry loop
+    while True:
+        if user not in load_creators():
+            break
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(_run())
+        except Exception as e:
+            log.warning(f"Chat capture loop error @{user}: {e}")
+        time.sleep(60)
+
 # ── Recorder ──────────────────────────────────────────────
 
 def ensure_recorder_running(user):
@@ -711,6 +735,8 @@ def ensure_recorder_running(user):
         t = threading.Thread(target=start_recorder, args=(user,), daemon=True)
         t.start()
         recorder_threads[user] = t
+        # also start chat capture in parallel
+        threading.Thread(target=start_chat_capture, args=(user,), daemon=True).start()
 
 def start_recorder(user):
     chunk = 0

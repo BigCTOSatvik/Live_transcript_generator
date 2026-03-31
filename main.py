@@ -468,6 +468,12 @@ def summary(creator):
         log.error(f"Summary failed: {e}")
         abort(500)
 
+@app.route("/spikes/<creator>/refresh")
+def refresh_spikes(creator):
+    p = INTEL_DIR / f"{creator}_spikes.json"
+    if p.exists(): p.unlink()
+    return redirect(f"/spikes/{creator}")
+
 @app.route("/summary/<creator>/refresh")
 def refresh_summary(creator):
     p = INTEL_DIR / f"{creator}_summary.txt"
@@ -492,6 +498,23 @@ def spikes(creator):
           </div>
         </main>"""
         return page(f"Spikes - {creator}", body)
+
+    # check viewer log has real data
+    try:
+        viewer_entries = json.loads(viewer_log.read_text())
+        if len(viewer_entries) < 3:
+            body = f"""{header(True)}
+            <main>
+              <h1 style="margin-bottom:6px">Traffic Spike Analysis</h1>
+              <p class="sub">@{creator}</p>
+              <div class="empty"><div class="empty-icon">📈</div>
+                <div class="etitle">Not enough viewer data yet</div>
+                <p>Only {len(viewer_entries)} data point(s) collected so far.<br>Need at least a few minutes of live data. Check back soon.</p>
+              </div>
+            </main>"""
+            return page(f"Spikes - {creator}", body)
+    except Exception:
+        viewer_entries = []
 
     if spike_path.exists():
         data = json.loads(spike_path.read_text())

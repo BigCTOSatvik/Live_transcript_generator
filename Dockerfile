@@ -16,6 +16,7 @@ ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH"
 
 WORKDIR /recorder
 RUN uv venv && uv sync
+RUN uv run pip install requests ffmpeg-python telethon
 
 # install our pipeline deps on top
 RUN pip install --break-system-packages openai flask

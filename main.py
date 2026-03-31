@@ -703,14 +703,7 @@ def start_recorder(user):
         ]
         log.info(f"@{user} chunk {chunk} starting ({CHUNK_SECONDS}s)...")
         try:
-            result = subprocess.run(cmd, cwd="/recorder", capture_output=True, text=True)
-            # extract room_id from output and start viewer polling once
-            if chunk == 1:
-                for line in result.stdout.splitlines():
-                    if "ROOM_ID" in line:
-                        room_id = line.split()[-1].strip()
-                        threading.Thread(target=poll_viewer_count, args=(user, room_id), daemon=True).start()
-                        break
+            subprocess.run(cmd, cwd="/recorder")
             log.info(f"@{user} chunk {chunk} done")
         except Exception as e:
             log.error(f"Recorder error @{user}: {e}")

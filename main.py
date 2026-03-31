@@ -291,19 +291,26 @@ def render_intel(n, i):
 # Transcription
 
 def transcribe(mp4_path):
-    # name transcript as username_originalfilename.txt
     creator = mp4_path.parent.name
     transcript_name = f"{creator}_{mp4_path.stem}.txt"
     transcript_path = TRANSCRIPTS_DIR / transcript_name
     if transcript_path.exists(): return
     log.info(f"Transcribing {mp4_path.name}...")
+    mp3_path = mp4_path.with_suffix(".mp3")
     try:
-        with open(mp4_path, "rb") as f:
+        subprocess.run([
+            "ffmpeg", "-y", "-i", str(mp4_path),
+            "-vn", "-ar", "16000", "-ac", "1", "-b:a", "32k",
+            str(mp3_path)
+        ], capture_output=True)
+        with open(mp3_path, "rb") as f:
             result = client.audio.transcriptions.create(model="whisper-1", file=f, response_format="text")
         transcript_path.write_text(result)
         log.info(f"Saved -> {transcript_path}")
+        mp3_path.unlink(missing_ok=True)
     except Exception as e:
         log.error(f"Transcription failed: {e}")
+        mp3_path.unlink(missing_ok=True)
 
 def watch_recordings():
     while True:

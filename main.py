@@ -695,7 +695,7 @@ def start_recorder(user):
         output_dir.mkdir(parents=True, exist_ok=True)
         chat_file  = COMMENTS_DIR / f"{user}_chat.txt"
         cmd = [
-            "python", "src/main.py",
+            "/root/.local/bin/uv", "run", "python", "src/main.py",
             "-user", user,
             "-mode", "manual",
             "-output", str(output_dir),

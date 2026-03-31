@@ -29,12 +29,11 @@ recorder_threads  = {}
 
 def load_creators():
     if CREATORS_FILE.exists():
-        return json.loads(CREATORS_FILE.read_text())
-    # fallback to env var on first run
-    env = [u.strip() for u in os.environ.get("TIKTOK_USERS", "").split(",") if u.strip()]
-    if env:
-        save_creators(env)
-    return env
+        try:
+            return json.loads(CREATORS_FILE.read_text())
+        except Exception:
+            pass
+    return []
 
 def save_creators(creators):
     CREATORS_FILE.write_text(json.dumps(creators))
@@ -694,22 +693,18 @@ def start_chat_capture(user):
         async def on_disconnect(event):
             log.info(f"Chat capture disconnected for @{user}")
 
-        # poll viewer count every 30s via room info
-        async def poll_viewers():
-            while True:
-                try:
-                    info = await client.web.fetch_room_id_from_unique_id(f"@{user}")
-                    # viewer count from client room info
-                    if hasattr(client, 'room') and client.room:
-                        count = getattr(client.room, 'user_count', 0)
-                        elapsed = int(time.time() - start_time)
-                        viewer_log.append({"t": elapsed, "viewers": count})
-                        viewers_file.write_text(json.dumps(viewer_log))
-                except Exception:
-                    pass
-                await asyncio.sleep(30)
-
-        asyncio.create_task(poll_viewers())
+        # capture viewer count from RoomUserSeqEvent - fires on every viewer change
+        try:
+            from TikTokLive.events import RoomUserSeqEvent
+            @client.on(RoomUserSeqEvent)
+            async def on_viewers(event):
+                elapsed = int(time.time() - start_time)
+                count = getattr(event, 'viewer_count', 0) or getattr(event, 'total_user', 0)
+                if count:
+                    viewer_log.append({"t": elapsed, "viewers": count})
+                    viewers_file.write_text(json.dumps(viewer_log))
+        except ImportError:
+            pass
 
         try:
             await client.connect()

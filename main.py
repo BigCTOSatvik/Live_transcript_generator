@@ -627,6 +627,8 @@ def transcribe(mp4_path):
 def watch_recordings():
     while True:
         for mp4 in RECORDINGS_DIR.rglob("*.mp4"):
+            # skip raw flv-converted files still being processed
+            if "_flv" in mp4.stem: continue
             if mp4 in already_processed: continue
             s1 = mp4.stat().st_size
             time.sleep(5)
